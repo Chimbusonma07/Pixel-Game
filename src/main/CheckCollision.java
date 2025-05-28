@@ -85,7 +85,7 @@ public class CheckCollision {
 				}
 				
 				if (entity.solidArea.intersects(gp.obj[i].solidArea)) {
-					if(gp.obj[i].collision = true) {
+					if(gp.obj[i].collision == true) {
 						entity.collisionOn = true;						
 					}
 					if (player == true) {
