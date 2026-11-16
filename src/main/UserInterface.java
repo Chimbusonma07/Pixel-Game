@@ -30,6 +30,7 @@ public class UserInterface {
 	public String currentDialogue = "";
 	public BufferedImage dialogueImage; // optional picture shown on the left of the dialogue bubble
 	public BufferedImage doorImage;
+	public Entity talkingTo; // NPC whose conversation is on screen (null for one-off messages)
 	String images[] = new String[11];
 	int imageChangeIndex = 0;
 	int imageChangeCounter = 0;
@@ -38,6 +39,8 @@ public class UserInterface {
 	String loading[] = new String[6];
 	int loadingIndex = 0;
 	int loadingCounter = 0;
+	// 5 loading-bar images x 480 frames at 60 FPS = 40 seconds on the instructions screen
+	static final int LOADING_FRAMES_PER_STEP = 480;
 	public int slotCol = 0;
 	public int slotRow = 0;
 	
@@ -353,12 +356,12 @@ public class UserInterface {
 			y += gp.tileSize;
 			g2.drawString(text1, x, y);
 			
-			String text2 = "> Approach the NPCs and press Enter to see what they";
+			String text2 = "> Walk into NPCs to talk to them, press Enter for";
 			x = gp.tileSize/2;
 			y += gp.tileSize;
 			g2.drawString(text2, x, y);
 			
-			String text3 = "have to say";
+			String text3 = "the next line";
 			x = gp.tileSize/2;
 			y += gp.tileSize/2;
 			g2.drawString(text3, x, y);
@@ -400,7 +403,7 @@ public class UserInterface {
 			g2.drawImage(gp.player.setup(loading[loadingIndex], gp.tileSize, gp.tileSize), x, y, gp.tileSize*10, gp.tileSize*6, null);
 			
 			loadingCounter ++;
-			if (loadingCounter == 60) {
+			if (loadingCounter == LOADING_FRAMES_PER_STEP) {
 				loadingIndex ++;
 				loadingCounter = 0;
 			}

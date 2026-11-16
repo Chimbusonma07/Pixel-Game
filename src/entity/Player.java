@@ -340,7 +340,7 @@ public class Player extends Entity{
     		}
 
     	    if (gp.obj[i].name == "Treasure") {
-    	    	if(haveKey == true && level == 3) {
+    	    	if(haveKey == true && level >= 3) { // >= so a higher level can never lock the player out
     	    		// the key is used up on the first chest
     	    		inventory.removeIf(item -> item != null && "Key".equals(item.name));
     	    		inventory.add(gp.obj[i]);
@@ -362,15 +362,21 @@ public class Player extends Entity{
     	}  
     }
     
+    // After a conversation ends, the player has to step away from the NPC and bump into them again
+    // to hear it again (otherwise standing against them would restart it straight away).
+    public boolean talkLocked = false;
+
     public void interactNPC(int i) {
-    	if(key.enterPressed == true) {
-    		if(i != 999) {
-    			gp.gameState = gp.dialogueState;
-        		gp.npc[i].speak();
-    		}
-    		else {
+    	if (i == 999) {
+    		talkLocked = false; // not touching an NPC any more: the next bump starts a new conversation
+    		if (key.enterPressed == true) {
     			playerAttacking = true;
     		}
+    		return;
+    	}
+    	// bumping into an NPC starts the whole conversation; Enter goes through the lines
+    	if (talkLocked == false) {
+    		gp.npc[i].startConversation();
     	}
     }
     
@@ -405,12 +411,27 @@ public class Player extends Entity{
     				gp.user.addMessage(gp.monsters[i].name + " killed!");
     				gp.user.addMessage("Exp + " + gp.monsters[i].exp);
     				exp += gp.monsters[i].exp;
+    				capWorldVer2Exp();
     				levelUp();
     			}
     		}
     	}
     }
     
+    // WorldVer2 tops out at Level 3: XP stops one short of Level 4 until the player goes through the chest.
+    // (Without this, dying and choosing RETRY respawns the monsters while keeping XP, so players could farm Level 4.)
+    public static final int WORLDVER2_MAX_LEVEL = 3;
+
+    void capWorldVer2Exp() {
+    	if (gp.currentMap == 0 && level >= WORLDVER2_MAX_LEVEL && exp >= nextLevelExp) {
+    		exp = nextLevelExp - 1;
+    		String text = "Max level here! Open the chest to grow stronger";
+    		if (!gp.user.message.contains(text)) {
+    			gp.user.addMessage(text);
+    		}
+    	}
+    }
+
     public void levelUp() {
     	if(exp >= nextLevelExp) {
     		level ++;

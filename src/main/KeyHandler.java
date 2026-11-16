@@ -148,8 +148,17 @@ public class KeyHandler implements KeyListener{
 
     public void dialogueState(int code) {
     	if (code == KeyEvent.VK_ENTER){
-            gp.gameState = gp.playState;
             gp.user.dialogueImage = null; // the next bubble starts without a picture
+
+            // in a conversation: Enter shows the next line, and closes it after the last one
+            if (gp.user.talkingTo != null && gp.user.talkingTo.nextLine()) {
+            	return;
+            }
+            if (gp.user.talkingTo != null) {
+            	gp.user.talkingTo = null;
+            	gp.player.talkLocked = true; // must step away and bump the NPC again to re-talk
+            }
+            gp.gameState = gp.playState;
          }
     }
     

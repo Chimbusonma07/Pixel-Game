@@ -74,12 +74,36 @@ public class Entity {
 	
 	public void damageReaction() {}
 	
+	// Start a full conversation from the first line. Enter shows the next line (see nextLine),
+	// and the conversation closes after the last one.
+	public void startConversation() {
+		dialogueIndex = 0;
+		if (dialogues[0] == null) {
+			return; // nothing to say
+		}
+		speak();
+		gp.user.talkingTo = this;
+		gp.user.dialogueImage = null;
+		gp.gameState = gp.dialogueState;
+	}
+
+	// Shows the next line; returns false when the conversation is over.
+	public boolean nextLine() {
+		if (dialogueIndex >= dialogues.length || dialogues[dialogueIndex] == null) {
+			return false;
+		}
+		gp.user.currentDialogue = dialogues[dialogueIndex];
+		dialogueIndex ++;
+		return true;
+	}
+
 	public void speak() {
 		if(dialogues[dialogueIndex] == null) {
 			dialogueIndex = 0;
 		}
 		gp.user.currentDialogue = dialogues[dialogueIndex];
 		dialogueIndex ++;
+		// turn to face the player
 		switch(gp.player.direction) {
 		case "up":
 			direction ="down";
