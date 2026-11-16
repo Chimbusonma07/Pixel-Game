@@ -21,8 +21,13 @@ public class KeyHandler implements KeyListener{
         	enterHeld = true;
         }
         
+        //VICTORY SCREEN
+        if (gp.gameState == gp.victoryState) {
+        	victoryState(code);
+        }
+        
         //TITLE STATE
-        if(gp.gameState == gp.titleState) {
+        else if(gp.gameState == gp.titleState) {
         	titleState(code);
         }
         
@@ -72,6 +77,16 @@ public class KeyHandler implements KeyListener{
     	upPressed = downPressed = leftPressed = rightPressed = enterPressed = shootPressed = false;
     	gameOverEnterArmed = false;
     	gameOverOpenedAt = 0;
+    }
+    
+    // Victory screen: Enter (after the same short guard as Game Over) starts a brand-new game.
+    public void victoryState(int code) {
+    	if (System.currentTimeMillis() - gameOverOpenedAt < GAME_OVER_INPUT_DELAY_MS || !gameOverEnterArmed) {
+    		return;
+    	}
+    	if (code == KeyEvent.VK_ENTER) {
+    		gp.restart(); // back to the title screen, everything as at the very beginning
+    	}
     }
     
     public void gameOverState(int code) {
