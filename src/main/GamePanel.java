@@ -93,31 +93,40 @@ public class GamePanel extends JPanel implements Runnable{
     	gameState = titleState;
     }
     
-    public void retry() {
-    	if (currentMap == 1 || currentMap == 2) {
-    		// died in the maze or the house: back to the maze centre, keeping level, XP and keys
-    		respawnInMaze();
-    		player.setLife();
-    		return;
-    	}
-    	changeMap(0);
-    	player.setDefaultPosition();
-    	player.setLife();
-    	aSet.setNPC();
-    	aSet.setMonsters();
+    // The player has died: show GAME OVER with RETRY selected. KeyHandler ignores input for a moment
+    // (and any Enter that was already held down) so an attack key-press can't pick an option by accident.
+    public void gameOver() {
+    	gameState = gameOverState;
+    	user.cursor = 0;
+    	key.gameOverOpened();
     }
-    
-    public void restart() {
-    	aSet.collectedCoins.clear(); // a new game puts every health coin back
-    	changeMap(0);
-    	clearEntities(); // drop the maze/house door, chest and coins if restarting from there
-    	player.SetDefaultValues();
-    	player.setDefaultPosition();
+
+    // RETRY: carry on from where you died. Same map and spot, same level/XP/items/keys/coins, and the
+    // world stays as it was (killed monsters stay dead, collected things stay collected, so nothing can
+    // be farmed). Full life, plus a few seconds of invincibility to get away from whatever killed you.
+    public void retry() {
     	player.setLife();
-    	player.setInventory();
-    	aSet.setObjects();
-    	aSet.setNPC();
-    	aSet.setMonsters();
+    	player.respawnShield = Player.RESPAWN_SHIELD_FRAMES;
+    	player.stopAttacking();
+    	projectileList.clear();
+    	if (player.projectile != null) player.projectile.alive = false;
+    	gameState = playState;
+    }
+
+    // RESTART: a brand-new game, exactly as when the game is first launched. Rebuilding the player,
+    // interface, events and world from scratch guarantees nothing carries over (stats, items, keys,
+    // coins, flags, menu cursors, messages...).
+    public void restart() {
+    	key.releaseAll();
+    	player = new Player(this, key);
+    	user = new UserInterface(this);
+    	eventH = new EventHandler(this);
+    	aSet = new AssetSetter(this);
+    	pathFinder = new PathFinder(this);
+    	currentMap = 0;
+    	tileM.loadMap("/Maps/WorldVer2.txt");
+    	clearEntities();
+    	setupGame(); // objects, NPCs, monsters, and back to the title screen
     }
     
     public void changeMap(int map) {

@@ -17,6 +17,9 @@ public class KeyHandler implements KeyListener{
 
     public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
+        if (code == KeyEvent.VK_ENTER) {
+        	enterHeld = true;
+        }
         
         //TITLE STATE
         if(gp.gameState == gp.titleState) {
@@ -49,7 +52,35 @@ public class KeyHandler implements KeyListener{
         }
     }
     
+    //GAME OVER INPUT GUARD
+    // Enter is also the attack key, so a player hammering/holding Enter when they die would instantly
+    // pick an option (keyboard auto-repeat). The menu ignores input for a moment, and Enter only counts
+    // once it has been let go and pressed again.
+    boolean enterHeld = false;          // is the Enter key physically down right now?
+    boolean gameOverEnterArmed = false; // has Enter been released since the Game Over screen opened?
+    long gameOverOpenedAt = 0;
+    static final long GAME_OVER_INPUT_DELAY_MS = 700;
+    
+    public void gameOverOpened() {
+    	gameOverOpenedAt = System.currentTimeMillis();
+    	gameOverEnterArmed = !enterHeld;
+    	enterPressed = false;
+    }
+    
+    // Let go of every key (used when starting a brand-new game).
+    public void releaseAll() {
+    	upPressed = downPressed = leftPressed = rightPressed = enterPressed = shootPressed = false;
+    	gameOverEnterArmed = false;
+    	gameOverOpenedAt = 0;
+    }
+    
     public void gameOverState(int code) {
+        	if (System.currentTimeMillis() - gameOverOpenedAt < GAME_OVER_INPUT_DELAY_MS) {
+        		return; // give the player a moment to see the screen
+        	}
+        	if (code == KeyEvent.VK_ENTER && !gameOverEnterArmed) {
+        		return; // this Enter was already held down when they died (auto-repeat)
+        	}
         	if (code == KeyEvent.VK_UP){
                 gp.user.cursor --;
                 if (gp.user.cursor < 0) {
@@ -202,6 +233,10 @@ public class KeyHandler implements KeyListener{
 
     public void keyReleased(KeyEvent e) {
         int code = e.getKeyCode();
+        if (code == KeyEvent.VK_ENTER) {
+        	enterHeld = false;
+        	gameOverEnterArmed = true;
+        }
          if (code == KeyEvent.VK_UP){
             upPressed = false;
          }

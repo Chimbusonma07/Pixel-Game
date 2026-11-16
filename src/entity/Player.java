@@ -78,6 +78,17 @@ public class Player extends Entity{
     	noDamage = false;
     }
     
+    // Cancel a sword swing that was in progress (used when respawning).
+    public void stopAttacking() {
+    	playerAttacking = false;
+    	spriteCounter = 0;
+    	spriteNumber = 1;
+    }
+    
+    // Frames of invincibility after RETRY, so a monster standing over the spot can't kill you again at once.
+    public int respawnShield = 0;
+    public static final int RESPAWN_SHIELD_FRAMES = 180; // 3 seconds
+    
     public int getAttack() {
     	return attack = strength * currentWeapon.attackValue;
     }
@@ -204,6 +215,13 @@ public class Player extends Entity{
     		shotCounter++;
     	}
     	
+    	//RESPAWN SHIELD after RETRY: can't be hurt for a few seconds (shown with the usual hit transparency)
+    	if (respawnShield > 0) {
+    		respawnShield--;
+    		noDamage = true;
+    		noDamageCounter = 0;
+    	}
+    	
     	if(noDamage == true) {
     		noDamageCounter ++;
     		if(noDamageCounter > 60) {
@@ -213,7 +231,7 @@ public class Player extends Entity{
     	}
     	
     	if(life <= 0) {
-    		gp.gameState = gp.gameOverState;
+    		gp.gameOver();
     	}
     }
     
