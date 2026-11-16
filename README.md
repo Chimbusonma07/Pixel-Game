@@ -46,7 +46,6 @@ Dying in the maze or the house respawns you at the maze centre, keeping your lev
 **Web version:** every push to `main` rebuilds and publishes it through GitHub Actions (`.github/workflows/pages.yml`). One-time setup: repo **Settings → Pages → Source: GitHub Actions**. To build it locally, run `bash build-web.sh`; the output goes to `build/web/` and must be served over HTTP, not opened as a file.
 
 ## 🎥 Gameplay Preview
-[Here is the gameplay preview](https://drive.google.com/file/d/1mLOP0K-b97thCAAhES0pzcJB3sQwvwu7/view?usp=sharing)
 
 ## ⌨️ Controls
 
