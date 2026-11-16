@@ -167,6 +167,10 @@ public class KeyHandler implements KeyListener{
             gp.gameState = gp.playState;
          }
     	
+    	if (code == KeyEvent.VK_ENTER){
+    		gp.player.useSelectedItem(); // e.g. use one Health Coin
+    	}
+    	
     	if (code == KeyEvent.VK_UP){
     		if (gp.user.slotRow != 0) {
     			gp.user.slotRow --;

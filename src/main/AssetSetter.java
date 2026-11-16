@@ -5,6 +5,7 @@ import Monsters.Blue;
 import Monsters.Ogre;
 import OBJ.OBJChest;
 import OBJ.OBJDoor;
+import OBJ.OBJHealthCoin;
 import OBJ.OBJKey;
 import entity.Entity;
 import entity.WizardNPC;
@@ -21,8 +22,39 @@ public class AssetSetter {
 		gp.obj[1] = new OBJKey(gp);
 		gp.obj[1].worldX = gp.tileSize * 40;
 		gp.obj[1].worldY = gp.tileSize * 10;
-		
+
 		setChest();
+
+		placeCoins(0, new int[][] {
+			{35, 11},   // teleport island, next to the hidden key
+			{20, 38},   // beside the ogre pair guarding the south
+			{13, 30},   // deep in the winding south-west road
+			{26, 17},   // tucked-away clearing off the central road
+		});
+	}
+
+	// ---------------- HEALTH COINS ----------------
+
+	// Coins already picked up ("map:col:row"), so they don't come back when a map reloads.
+	// Cleared on RESTART.
+	public java.util.Set<String> collectedCoins = new java.util.HashSet<>();
+	static final int FIRST_COIN_SLOT = 5; // obj[5..] hold coins; lower slots are keys/chests/doors
+
+	void placeCoins(int map, int[][] spots) {
+		int slot = FIRST_COIN_SLOT;
+		for (int[] s : spots) {
+			if (collectedCoins.contains(map + ":" + s[0] + ":" + s[1])) {
+				continue;
+			}
+			gp.obj[slot] = new OBJHealthCoin(gp);
+			gp.obj[slot].worldX = gp.tileSize * s[0];
+			gp.obj[slot].worldY = gp.tileSize * s[1];
+			slot++;
+		}
+	}
+
+	public void coinCollected(Entity coin) {
+		collectedCoins.add(gp.currentMap + ":" + coin.worldX / gp.tileSize + ":" + coin.worldY / gp.tileSize);
 	}
 	
 	public void setChest() {
@@ -58,6 +90,17 @@ public class AssetSetter {
 		gp.obj[1].collision = true;
 		gp.obj[1].worldX = gp.tileSize * 38;
 		gp.obj[1].worldY = gp.tileSize * 38;
+
+		// rewards for exploring dead ends, plus top-ups on the long routes to the door and the chest
+		placeCoins(1, new int[][] {
+			{8, 8},     // far north-west dead end
+			{10, 12},   // dead end on the long way to the door
+			{18, 20},   // mid-maze dead end
+			{28, 26},   // east dead end
+			{10, 28},   // west dead end
+			{14, 34},   // south-west dead end
+			{30, 40},   // dead end on the way to the Grand Treasure
+		});
 	}
 
 	public void setMazeMonsters() {
@@ -104,6 +147,10 @@ public class AssetSetter {
 		wizard.worldX = gp.tileSize * 24;
 		wizard.worldY = gp.tileSize * 21;
 		gp.npc[0] = wizard;
+
+		placeCoins(2, new int[][] {
+			{20, 25},   // a gift on the reading-corner rug
+		});
 	}
 
 	// ---------------- WORLDVER2 ----------------

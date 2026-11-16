@@ -16,6 +16,7 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
+import OBJ.OBJHealthCoin;
 import OBJ.OBJLife;
 
 public class UserInterface {
@@ -381,7 +382,7 @@ public class UserInterface {
 			y += gp.tileSize;
 			g2.drawString(text6, x, y);
 			
-			String text7 = "> Press Shift to check character attributes";
+			String text7 = "> Shift: stats & inventory (Enter uses a Health Coin)";
 			x = gp.tileSize/2;
 			y += gp.tileSize;
 			g2.drawString(text7, x, y);
@@ -557,6 +558,18 @@ public class UserInterface {
 		//DRAW ITEMS
 		for(int i = 0; i < gp.player.inventory.size(); i++) {
 			g2.drawImage(gp.player.inventory.get(i).down1, slotX, slotY, null);
+
+			//STACK COUNT on the Health Coin slot
+			if (OBJHealthCoin.NAME.equals(gp.player.inventory.get(i).name)) {
+				String count = "x" + gp.player.healthCoins;
+				g2.setFont(g2.getFont().deriveFont(Font.BOLD, 18F));
+				int countX = slotX + gp.tileSize - (int) g2.getFontMetrics().getStringBounds(count, g2).getWidth();
+				int countY = slotY + gp.tileSize - 2;
+				g2.setColor(Color.black);
+				g2.drawString(count, countX + 2, countY + 2);
+				g2.setColor(Color.white);
+				g2.drawString(count, countX, countY);
+			}
 			slotX += slotSize;
 			
 			if(i == 4 || i == 9 || i == 14) {
@@ -590,11 +603,36 @@ public class UserInterface {
 		
 		if(itemIndex < gp.player.inventory.size()) {
 			subWindow(dFrameX, dFrameY, dFrameWidth, dFrameHeight);
-			for(String line: gp.player.inventory.get(itemIndex).description.split("\n")) {
+			Entity item = gp.player.inventory.get(itemIndex);
+			String description = item.description;
+			if (OBJHealthCoin.NAME.equals(item.name)) {
+				description = "[" + item.name + "] x" + gp.player.healthCoins
+						+ "\nRestores 1 heart.\nPress Enter to use one.";
+			}
+			for(String line: description.split("\n")) {
 				g2.drawString(line, textX, textY);
 				textY += 32;
 			}
-		}	
+		}
+
+		//NOTICE after pressing Enter (e.g. "Life restored! 2 coins left"), shown for 2 seconds
+		if (inventoryNoticeCounter > 0) {
+			inventoryNoticeCounter--;
+			g2.setFont(g2.getFont().deriveFont(Font.BOLD, 22F));
+			int noticeY = dFrameY + dFrameHeight + gp.tileSize/2 + 8;
+			g2.setColor(Color.black);
+			g2.drawString(inventoryNotice, frameX + 2, noticeY + 2);
+			g2.setColor(Color.white);
+			g2.drawString(inventoryNotice, frameX, noticeY);
+		}
+	}
+
+	String inventoryNotice = "";
+	int inventoryNoticeCounter = 0;
+
+	public void showInventoryNotice(String text) {
+		inventoryNotice = text;
+		inventoryNoticeCounter = 120;
 	}
 	
 	public int getIndexforSlot() {

@@ -44,14 +44,14 @@ public class GamePanel extends JPanel implements Runnable{
     public KeyHandler key = new KeyHandler(this);
     Thread gameThread; // to enable the game run in real time, use the class 'Thread'
     public CheckCollision checker = new CheckCollision(this);
-    AssetSetter aSet = new AssetSetter(this);
+    public AssetSetter aSet = new AssetSetter(this);
     public UserInterface user = new UserInterface(this);
     public EventHandler eventH = new EventHandler(this);
     public PathFinder pathFinder = new PathFinder(this);
     
     //ENTITY AND OBJECT
     public Player player = new Player(this, key);
-    public Entity obj[] = new Entity[10];
+    public Entity obj[] = new Entity[20]; // 0-4 keys, chests, doors; 5+ health coins
     public Entity npc[] = new Entity[10];
     public Entity monsters[] = new Entity[20];
     public ArrayList<Entity> projectileList = new ArrayList<>();
@@ -100,7 +100,9 @@ public class GamePanel extends JPanel implements Runnable{
     }
     
     public void restart() {
+    	aSet.collectedCoins.clear(); // a new game puts every health coin back
     	changeMap(0);
+    	clearEntities(); // drop the maze/house door, chest and coins if restarting from there
     	player.SetDefaultValues();
     	player.setDefaultPosition();
     	player.setLife();

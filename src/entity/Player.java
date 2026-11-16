@@ -7,6 +7,7 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
+import OBJ.OBJHealthCoin;
 import OBJ.OBJ_FireBall;
 import OBJ.OBJ_Sword;
 
@@ -18,6 +19,7 @@ public class Player extends Entity{
     public final int maxInventorySize = 20;
     public boolean haveKey = false;
     public boolean haveChestKey = false; // the wizard's key to the Grand Treasure in the maze
+    public int healthCoins = 0;          // stacked in a single inventory slot
     int count = 0;
 
     public Player(GamePanel gp, KeyHandler key){
@@ -62,6 +64,7 @@ public class Player extends Entity{
     	defense = 1; //Defense is determined by the dexterity and the shield's defense value
     	haveKey = false;
     	haveChestKey = false;
+    	healthCoins = 0;
     }
     
     public void setDefaultPosition() {
@@ -321,6 +324,25 @@ public class Player extends Entity{
     			return;
     		}
 
+    		//HEALTH COIN: stacks in one inventory slot
+    		if (OBJHealthCoin.NAME.equals(gp.obj[i].name)) {
+    			if (healthCoins == 0 && inventory.size() >= maxInventorySize) {
+    				text = "Your inventory is full";
+    				if (!gp.user.message.contains(text)) {
+    					gp.user.addMessage(text);
+    				}
+    				return;
+    			}
+    			if (healthCoins == 0) {
+    				inventory.add(gp.obj[i]);
+    			}
+    			healthCoins++;
+    			gp.aSet.coinCollected(gp.obj[i]);
+    			gp.obj[i] = null;
+    			gp.user.addMessage("Health Coin obtained!! (x" + healthCoins + ")");
+    			return;
+    		}
+
     		//GRAND TREASURE: needs the wizard's key and Level 6, then the game is won
     		if ("Grand Treasure".equals(gp.obj[i].name)) {
     			if (haveChestKey == false) {
@@ -365,6 +387,28 @@ public class Player extends Entity{
     // After a conversation ends, the player has to step away from the NPC and bump into them again
     // to hear it again (otherwise standing against them would restart it straight away).
     public boolean talkLocked = false;
+
+    // Enter in the inventory: use the selected item. Only Health Coins can be used.
+    public void useSelectedItem() {
+    	int index = gp.user.getIndexforSlot();
+    	if (index >= inventory.size()) {
+    		return;
+    	}
+    	Entity item = inventory.get(index);
+    	if (!OBJHealthCoin.NAME.equals(item.name) || healthCoins <= 0) {
+    		return;
+    	}
+    	if (life >= maxLife) {
+    		gp.user.showInventoryNotice("Your life is already full!");
+    		return;
+    	}
+    	life = Math.min(maxLife, life + OBJHealthCoin.HEAL_AMOUNT);
+    	healthCoins--;
+    	if (healthCoins == 0) {
+    		inventory.remove(index); // last coin used: free the slot
+    	}
+    	gp.user.showInventoryNotice("Life restored! " + healthCoins + " coin" + (healthCoins == 1 ? "" : "s") + " left");
+    }
 
     public void interactNPC(int i) {
     	if (i == 999) {
