@@ -28,7 +28,8 @@ public class UserInterface {
 	public ArrayList<String> message = new ArrayList<>();
 	public ArrayList<Integer> messageCounter = new ArrayList<>();
 	public String currentDialogue = "";
-	public BufferedImage dialogueImage;
+	public BufferedImage dialogueImage; // optional picture shown on the left of the dialogue bubble
+	public BufferedImage doorImage;
 	String images[] = new String[11];
 	int imageChangeIndex = 0;
 	int imageChangeCounter = 0;
@@ -55,12 +56,25 @@ public class UserInterface {
 			e.printStackTrace();
 		}
 		
+		try {
+			doorImage = ImageIO.read(getClass().getResourceAsStream("/objects/door.png"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 		Entity heart = new OBJLife(gp);
 		heart_full = heart.image;
 		heart_half = heart.image2;
 		heart_empty = heart.image3;
 	}
 	
+	// Opens a dialogue bubble, with an optional picture (null for text only).
+	public void showDialogue(String text, BufferedImage picture) {
+		currentDialogue = text;
+		dialogueImage = picture;
+		gp.gameState = gp.dialogueState;
+	}
+
 	public void addMessage(String text) {
 		message.add(text);
 		messageCounter.add(0);
@@ -87,22 +101,44 @@ public class UserInterface {
 	
 	public void draw(Graphics2D g2) {
 		if(gameEnd == true) {
-			g2.setColor(Color.white);
+			this.g2 = g2;
 			g2.setFont(maruMonica);
-			g2.setColor(new Color(0, 0, 0, 140));
+			g2.setColor(new Color(0, 0, 0, 170));
 			g2.fillRect(0, 0, gp.maxScreenWidth, gp.maxScreenHeight);
-			g2.setFont(g2.getFont().deriveFont(Font.BOLD, 56F));
+
 			int x;
 			int y;
-			String text; 
-			text = "CONGRATULATIONS!!!!";
-			x = gp.tileSize/4;
-			y = gp.tileSize * 5;
+			String text;
+
+			//TREASURE PICTURE
+			int size = gp.tileSize * 3;
+			y = gp.tileSize;
+			g2.drawImage(gp.player.setup("/objects/treasure chest", gp.tileSize, gp.tileSize),
+					gp.maxScreenWidth/2 - size/2, y, size, size, null);
+
+			//TITLE
+			g2.setFont(g2.getFont().deriveFont(Font.BOLD, 56F));
+			text = "CONGRATULATIONS!";
+			x = getXForCenteredText(text);
+			y += size + gp.tileSize * 2;
 			g2.setColor(Color.black);
 			g2.drawString(text, x + 5, y + 5);
-			g2.setColor(Color.white);
+			g2.setColor(Color.yellow);
 			g2.drawString(text, x, y);
-			
+
+			//SUBTITLES
+			g2.setFont(g2.getFont().deriveFont(Font.PLAIN, 28F));
+			g2.setColor(Color.white);
+			text = "You opened the Grand Treasure!";
+			x = getXForCenteredText(text);
+			y += gp.tileSize * 1.5;
+			g2.drawString(text, x, y);
+
+			text = "Level " + gp.player.level + " hero - you win!";
+			x = getXForCenteredText(text);
+			y += gp.tileSize;
+			g2.drawString(text, x, y);
+
 			gp.gameThread = null;
 		}
 		else {
@@ -391,14 +427,21 @@ public class UserInterface {
 		
 		subWindow(x, y, width, height);
 		
-//		g2.drawImage(dialogueImage, x - 40, y - 30, gp.tileSize*2, gp.tileSize*2, null);
-		
+		int characterLimit = 30;
+
+		//OPTIONAL PICTURE ON THE LEFT (e.g. the door), TEXT MOVES RIGHT TO MAKE ROOM
+		if (dialogueImage != null) {
+			int size = gp.tileSize * 2;
+			g2.drawImage(dialogueImage, x + gp.tileSize/2, y + (height - size)/2, size, size, null);
+			x += size + gp.tileSize/2;
+			characterLimit = 24;
+		}
+
 		g2.setFont(g2.getFont().deriveFont(Font.PLAIN, 25F));
 		x += (gp.tileSize);
 		y += gp.tileSize;
-		
+
 		//AUTOMATICALLY SPLIT DIALOGUE BASED ON CHARACTER LIMIT
-        int characterLimit = 30;
         int characterCount = 0;
         StringBuilder line = new StringBuilder();
 

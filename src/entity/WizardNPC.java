@@ -36,8 +36,28 @@ public class WizardNPC extends Entity {
 		dialogues[4] = "You must be above level 1 to teleport back because teleportation takes a lot of energy. Good luck!!";
 	}
 	
+	// Inside the house the wizard stands still at the end of the carpet and gives hints.
+	boolean stationary = false;
+
+	public void setHouseMode() {
+		stationary = true;
+		direction = "down";
+		speed = 0;
+		dialogues = new String[20];
+		dialogueIndex = 0;
+		dialogues[0] = "The chest lies deep in the maze, in the corner far from my door.";
+		dialogues[1] = "Ogres guard it. Only a hero of Level 6 can open it. Good luck!";
+	}
+
+	public void update() {
+		if (stationary) {
+			return; // no wandering and no walk-in-place animation
+		}
+		super.update();
+	}
+
 	public void setAction() {
-		
+
 		actionCounter ++;
 		
 		if (actionCounter == 120) {

@@ -17,6 +17,7 @@ public class Player extends Entity{
     public ArrayList<Entity> inventory = new ArrayList<>();
     public final int maxInventorySize = 20;
     public boolean haveKey = false;
+    public boolean haveChestKey = false; // the wizard's key to the Grand Treasure in the maze
     int count = 0;
 
     public Player(GamePanel gp, KeyHandler key){
@@ -58,7 +59,9 @@ public class Player extends Entity{
     	projectile = new OBJ_FireBall(gp);
     	currentWeapon = new OBJ_Sword(gp);
     	attack = getAttack(); //Attack is determined by strength and the sword's attack value
-    	defense = 1; //Defense is determined by the dexterity and the shield's defense value 
+    	defense = 1; //Defense is determined by the dexterity and the shield's defense value
+    	haveKey = false;
+    	haveChestKey = false;
     }
     
     public void setDefaultPosition() {
@@ -133,7 +136,8 @@ public class Player extends Entity{
             collisionOn = false;
             //CHECK TILE COLLISION
             gp.checker.checkTile(this);
-            
+            boolean blockedByTile = collisionOn;
+
             //CHECK NPC COLLISION
             int npcIndex = gp.checker.checkEntity(this, gp.npc);
             interactNPC(npcIndex);
@@ -167,7 +171,11 @@ public class Player extends Entity{
             		break;
             	}
             }
-            
+            //CORNER ASSIST: only a wall is in the way (no monster, NPC or object), so try sliding round the corner
+            else if (blockedByTile && key.enterPressed == false && npcIndex == 999 && objIndex == 999 && monsterIndex == 999) {
+            	cornerAssist();
+            }
+
             gp.key.enterPressed = false;
             
             spriteCounter ++;
@@ -206,6 +214,49 @@ public class Player extends Entity{
     	}
     }
     
+    // How far (pixels) the player may be off a corridor opening and still get slid into it.
+    static final int CORNER_ASSIST_RANGE = 24;
+
+    // Walking into a wall next to an opening: slide sideways toward the opening (one step per frame)
+    // instead of stopping dead, so turning into 1-tile corridors doesn't need pixel-perfect timing.
+    void cornerAssist() {
+    	boolean vertical = direction.equals("up") || direction.equals("down");
+    	for (int dist = 1; dist <= CORNER_ASSIST_RANGE; dist++) {
+    		for (int sign = -1; sign <= 1; sign += 2) {
+    			int shift = dist * sign;
+    			int testX = vertical ? worldX + shift : worldX;
+    			int testY = vertical ? worldY : worldY + shift;
+    			if (tileFreeAt(testX, testY, direction)) {
+    				// opening found: take one sideways step toward it, if that step isn't into a wall
+    				String side = vertical ? (sign < 0 ? "left" : "right") : (sign < 0 ? "up" : "down");
+    				int step = Math.min(speed, dist);
+    				if (tileFreeAt(worldX, worldY, side)) {
+    					if (vertical) worldX += step * sign;
+    					else worldY += step * sign;
+    				}
+    				return;
+    			}
+    		}
+    	}
+    }
+
+    // Would moving one step in `dir` from (x, y) be free of solid tiles?
+    boolean tileFreeAt(int x, int y, String dir) {
+    	int oldX = worldX, oldY = worldY;
+    	String oldDir = direction;
+    	worldX = x;
+    	worldY = y;
+    	direction = dir;
+    	collisionOn = false;
+    	gp.checker.checkTile(this);
+    	boolean free = !collisionOn;
+    	worldX = oldX;
+    	worldY = oldY;
+    	direction = oldDir;
+    	collisionOn = true; // we were blocked; keep it that way for the rest of this frame
+    	return free;
+    }
+
     public void attacking() {
     	spriteCounter++;
     	if(spriteCounter <= 5) {
@@ -258,12 +309,44 @@ public class Player extends Entity{
     public void pickUpObject(int i) {
     	if(i != 999) {
     		String text = "";
+
+    		//DOOR: maze <-> wizard's house
+    		if ("Door".equals(gp.obj[i].name)) {
+    			if (gp.currentMap == 1) {
+    				gp.changeMap(2);
+    			}
+    			else if (gp.currentMap == 2) {
+    				gp.exitHouse();
+    			}
+    			return;
+    		}
+
+    		//GRAND TREASURE: needs the wizard's key and Level 6, then the game is won
+    		if ("Grand Treasure".equals(gp.obj[i].name)) {
+    			if (haveChestKey == false) {
+    				text = "It's locked... find the wizard!";
+    			}
+    			else if (level < 6) {
+    				text = "You must be Level 6 to open it (you are Level " + level + ")";
+    			}
+    			else {
+    				gp.user.gameEnd = true;
+    				return;
+    			}
+    			if (!gp.user.message.contains(text)) { // don't stack the same message every frame
+    				gp.user.addMessage(text);
+    			}
+    			return;
+    		}
+
     	    if (gp.obj[i].name == "Treasure") {
     	    	if(haveKey == true && level == 3) {
+    	    		// the key is used up on the first chest
+    	    		inventory.removeIf(item -> item != null && "Key".equals(item.name));
     	    		inventory.add(gp.obj[i]);
         			haveKey = false;
         			gp.obj[i] = null;
-        			gp.user.gameEnd = true;
+        			gp.changeMap(1);
     	    	}
     		}
     		else if (inventory.size() != maxInventorySize && gp.obj[i].name != "Treasure") {

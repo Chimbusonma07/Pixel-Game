@@ -11,9 +11,17 @@ public class OBJ_FireBall extends FireBall{
 		name = "Fireball";
 		speed = 5;
 		attack = 2;
-		maxLife = 80;
+		maxLife = 240; // safety range (~25 tiles); normally it flies until it hits a wall or a monster
 		life = maxLife;
 		alive = false;
+
+		// small hitbox in the middle of the sprite so it fits down 1-tile corridors
+		solidArea.x = 12;
+		solidArea.y = 12;
+		solidArea.width = 24;
+		solidArea.height = 24;
+		solidAreaDefaultX = solidArea.x;
+		solidAreaDefaultY = solidArea.y;
 		getImage();
 	}
 	

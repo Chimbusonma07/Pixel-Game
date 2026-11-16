@@ -10,9 +10,11 @@ public class CheckCollision {
 	
 	public void checkTile(Entity entity) {
 		int entityLeft = entity.worldX + entity.solidArea.x;
-		int entityRight = entity.worldX + entity.solidArea.x + entity.solidArea.width;
+		// -1: right/bottom are the last pixel *inside* the hitbox. Without it, a hitbox that ends exactly
+		// on a tile edge (e.g. the player's, 16 + 32 = 48) checks the next tile and gets stuck in 1-tile corridors.
+		int entityRight = entity.worldX + entity.solidArea.x + entity.solidArea.width - 1;
 		int entityTop = entity.worldY + entity.solidArea.y;
-		int entityBottom = entity.worldY + entity.solidArea.y + entity.solidArea.height;
+		int entityBottom = entity.worldY + entity.solidArea.y + entity.solidArea.height - 1;
 		
 		int entityLeftCol = entityLeft/gp.tileSize;
 		int entityRightCol = entityRight/gp.tileSize;

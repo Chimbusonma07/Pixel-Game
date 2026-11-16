@@ -1,15 +1,11 @@
 package Monsters;
 
-import entity.Entity;
 import main.GamePanel;
 
-public class Ogre extends Entity{
-	GamePanel gp;
+public class Ogre extends Monster{
 	public Ogre(GamePanel gp) {
 		super(gp);
-		this.gp = gp;
-		type = 2;
-		name = "Beetle";
+		name = "Ogre";
 		speed = 2;
 		maxLife = 6;
 		life = maxLife;
@@ -23,6 +19,15 @@ public class Ogre extends Entity{
 		solidArea.height = 30;
 		solidAreaDefaultX = solidArea.x;
 		solidAreaDefaultY = solidArea.y;
+
+		//AI: guard - stays near its post, charges when it sees you, walks back if lured away
+		wanderSpeed = 1;
+		chaseSpeed = 3;
+		sightRange = 6;
+		guardsHome = true;
+		leashRange = 7;
+		returnSpeed = 2;
+		retreatTime = 60; // ogres shake it off fast (1 second) - they feel aggressive
 		getImage();
 	}
 	
@@ -36,36 +41,5 @@ public class Ogre extends Entity{
 		left_stand = setup("/Ogre/left2",gp.tileSize, gp.tileSize);
 		right_stand = setup("/Ogre/right1", gp.tileSize, gp.tileSize);
 		right_run = setup("/Ogre/right2", gp.tileSize, gp.tileSize);
-	}
-	
-	public void setAction() {
-			
-			actionCounter ++;
-			
-			if (actionCounter == 120) {
-				int i = (int) ((Math.random()*100) + 1);
-				
-				if(i <= 25) {
-					direction = "up";
-				}
-				
-				if(i > 25 && i <= 50) {
-					direction = "down";
-				}
-				
-				if(i > 50 && i <= 75) {
-					direction = "left";
-				}
-				
-				if(i > 75 && i <= 100) {
-					direction = "right";
-				}
-				actionCounter = 0; //reset the counter
-			}
-		}
-	
-	public void damageReaction() {
-		actionCounter = 0;
-		direction = gp.player.direction;
 	}
 }

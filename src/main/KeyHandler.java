@@ -149,6 +149,7 @@ public class KeyHandler implements KeyListener{
     public void dialogueState(int code) {
     	if (code == KeyEvent.VK_ENTER){
             gp.gameState = gp.playState;
+            gp.user.dialogueImage = null; // the next bubble starts without a picture
          }
     }
     

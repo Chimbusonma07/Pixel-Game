@@ -1,15 +1,11 @@
 package Monsters;
 
 
-import entity.Entity;
 import main.GamePanel;
 
-public class Beetle extends Entity{
-	GamePanel gp;
+public class Beetle extends Monster{
 	public Beetle(GamePanel gp) {
 		super(gp);
-		this.gp = gp;
-		type = 2;
 		name = "Beetle";
 		speed = 1;
 		maxLife = 4;
@@ -24,6 +20,13 @@ public class Beetle extends Entity{
 		solidArea.height = 30;
 		solidAreaDefaultX = solidArea.x;
 		solidAreaDefaultY = solidArea.y;
+
+		//AI: skittish swarmer - chases, but runs away when badly hurt
+		wanderSpeed = 1;
+		chaseSpeed = 2;
+		sightRange = 5;
+		fleesWhenHurt = true;
+		retreatTime = 180; // skittish - runs for the full 3 seconds
 		getImage();
 	}
 	
@@ -37,36 +40,5 @@ public class Beetle extends Entity{
 		left_stand = setup("/Monsters/beetle1",gp.tileSize, gp.tileSize);
 		right_stand = setup("/Monsters/beetle3", gp.tileSize, gp.tileSize);
 		right_run = setup("/Monsters/beetle4", gp.tileSize, gp.tileSize);
-	}
-	
-	public void setAction() {
-			
-			actionCounter ++;
-			
-			if (actionCounter == 120) {
-				int i = (int) ((Math.random()*100) + 1);
-				
-				if(i <= 25) {
-					direction = "up";
-				}
-				
-				if(i > 25 && i <= 50) {
-					direction = "down";
-				}
-				
-				if(i > 50 && i <= 75) {
-					direction = "left";
-				}
-				
-				if(i > 75 && i <= 100) {
-					direction = "right";
-				}
-				actionCounter = 0; //reset the counter
-			}
-		}
-	
-	public void damageReaction() {
-		actionCounter = 0;
-		direction = gp.player.direction;
 	}
 }

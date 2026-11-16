@@ -16,13 +16,36 @@ public class FireBall extends Entity{
 		this.life = this.maxLife;
 	}
 	
+	public boolean fromPlayer = true; // false for monster projectiles (they hurt the player instead)
+
 	public void update() {
-		int monsterIndex = gp.checker.checkEntity(this, gp.monsters);
-		if (monsterIndex != 999) {
-			gp.player.damageMonster(monsterIndex, attack);
-			alive = false;
+		if (fromPlayer) {
+			int monsterIndex = gp.checker.checkEntity(this, gp.monsters);
+			// fly through monsters that are already dying instead of fizzling out on them
+			if (monsterIndex != 999 && gp.monsters[monsterIndex].dying == false) {
+				gp.player.damageMonster(monsterIndex, attack);
+				alive = false;
+				return;
+			}
 		}
-		
+		else if (gp.checker.checkPlayer(this)) {
+			if (gp.player.noDamage == false) {
+				int damage = Math.max(attack - gp.player.defense, 0);
+				gp.player.life -= damage;
+				gp.player.noDamage = true;
+			}
+			alive = false;
+			return;
+		}
+
+		// stop at walls (brick, trees, water) instead of passing through them
+		collisionOn = false;
+		gp.checker.checkTile(this);
+		if (collisionOn == true) {
+			alive = false;
+			return;
+		}
+
 		switch(direction) {
 		case "up": 
 			worldY -= speed; 

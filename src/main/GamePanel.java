@@ -47,6 +47,7 @@ public class GamePanel extends JPanel implements Runnable{
     AssetSetter aSet = new AssetSetter(this);
     public UserInterface user = new UserInterface(this);
     public EventHandler eventH = new EventHandler(this);
+    public PathFinder pathFinder = new PathFinder(this);
     
     //ENTITY AND OBJECT
     public Player player = new Player(this, key);
@@ -65,6 +66,9 @@ public class GamePanel extends JPanel implements Runnable{
     public final int characterState = 4;
     public final int gameOverState = 5;
 
+    //MAPS
+    public int currentMap = 0; // 0 = WorldVer2, 1 = maze (dungeon.txt), 2 = wizard's house (World01.txt)
+
     //SET PLAYER'S POSITIONS
     public GamePanel(){
         this.setPreferredSize(new Dimension (maxScreenWidth, maxScreenHeight));
@@ -82,6 +86,13 @@ public class GamePanel extends JPanel implements Runnable{
     }
     
     public void retry() {
+    	if (currentMap == 1 || currentMap == 2) {
+    		// died in the maze or the house: back to the maze centre, keeping level, XP and keys
+    		respawnInMaze();
+    		player.setLife();
+    		return;
+    	}
+    	changeMap(0);
     	player.setDefaultPosition();
     	player.setLife();
     	aSet.setNPC();
@@ -89,6 +100,7 @@ public class GamePanel extends JPanel implements Runnable{
     }
     
     public void restart() {
+    	changeMap(0);
     	player.SetDefaultValues();
     	player.setDefaultPosition();
     	player.setLife();
@@ -98,6 +110,60 @@ public class GamePanel extends JPanel implements Runnable{
     	aSet.setMonsters();
     }
     
+    public void changeMap(int map) {
+    	currentMap = map;
+    	if (map == 1) {
+    		// pulled in by the first chest: land in the centre of the maze
+    		respawnInMaze();
+    		user.showDialogue("Find the wizard!", user.doorImage);
+    	}
+    	else if (map == 2) {
+    		// through the maze door into the wizard's house
+    		tileM.loadMap("/Maps/World01.txt");
+    		clearEntities();
+    		aSet.setHouse();
+    		player.worldX = tileSize * AssetSetter.HOUSE_DOOR_COL; // just inside the entrance
+    		player.worldY = tileSize * (AssetSetter.HOUSE_DOOR_ROW - 1);
+    		player.direction = "up";
+    	}
+    	else {
+    		tileM.loadMap("/Maps/WorldVer2.txt");
+    	}
+    }
+
+    // Leave the house through the entrance and come back out next to the maze door.
+    public void exitHouse() {
+    	loadMaze();
+    	player.worldX = tileSize * AssetSetter.MAZE_DOOR_EXIT_COL;
+    	player.worldY = tileSize * AssetSetter.MAZE_DOOR_EXIT_ROW;
+    	player.direction = "left"; // facing away from the door
+    	eventH.doorHintShown = true; // they already know where the door is
+    }
+
+    public void respawnInMaze() {
+    	loadMaze();
+    	player.worldX = tileSize * 24; // centre of the maze
+    	player.worldY = tileSize * 24;
+    	player.direction = "down";
+    }
+
+    // Loads the maze map with a fresh set of monsters, the door and the Grand Treasure.
+    private void loadMaze() {
+    	currentMap = 1;
+    	tileM.loadMap("/Maps/dungeon.txt");
+    	clearEntities();
+    	aSet.setMazeObjects();
+    	aSet.setMazeMonsters();
+    	eventH.doorHintShown = false;
+    }
+
+    private void clearEntities() {
+    	java.util.Arrays.fill(obj, null);
+    	java.util.Arrays.fill(npc, null);
+    	java.util.Arrays.fill(monsters, null);
+    	projectileList.clear();
+    }
+
     public void startGameThread() {
         gameThread = new Thread(this); //this refers to the class 'GamePanel'
         gameThread.start();
@@ -144,6 +210,7 @@ public class GamePanel extends JPanel implements Runnable{
             }
     		
     		//MONSTERS
+    		pathFinder.update(); // fresh "distance to player" map for the monster AI
     		for (int i = 0; i < monsters.length; i++) {
     			if (monsters[i] != null) {
     				if(monsters[i].alive == true && monsters[i].dying == false) {

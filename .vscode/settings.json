@@ -1,0 +1,5 @@
+{
+    "code-runner.executorMap": {
+        "java": "cd $workspaceRoot && javac -d bin -sourcepath src src/main/MainGame.java && java -cp \"bin;res\" main.MainGame"
+    }
+}

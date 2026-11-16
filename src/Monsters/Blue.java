@@ -1,14 +1,11 @@
 package Monsters;
 
-import entity.Entity;
+import OBJ.OBJ_SlimeBall;
 import main.GamePanel;
 
-public class Blue extends Entity{
-	GamePanel gp;
+public class Blue extends Monster{
 	public Blue(GamePanel gp) {
 		super(gp);
-		this.gp = gp;
-		type = 2;
 		name = "Blue";
 		speed = 1;
 		maxLife = 4;
@@ -23,6 +20,14 @@ public class Blue extends Entity{
 		solidArea.height = 30;
 		solidAreaDefaultX = solidArea.x;
 		solidAreaDefaultY = solidArea.y;
+
+		//AI: spitter - keeps its distance and shoots slime down straight corridors
+		wanderSpeed = 1;
+		chaseSpeed = 1;
+		sightRange = 7;
+		ranged = true;
+		missile = new OBJ_SlimeBall(gp);
+		retreatTime = 120; // backs off 2 seconds, then returns to spitting range
 		getImage();
 	}
 	
@@ -36,36 +41,5 @@ public class Blue extends Entity{
 		left_stand = setup("/Monsters/blue2",gp.tileSize, gp.tileSize);
 		right_stand = setup("/Monsters/blue1", gp.tileSize, gp.tileSize);
 		right_run = setup("/Monsters/blue2", gp.tileSize, gp.tileSize);
-	}
-	
-	public void setAction() {
-			
-			actionCounter ++;
-			
-			if (actionCounter == 120) {
-				int i = (int) ((Math.random()*100) + 1);
-				
-				if(i <= 25) {
-					direction = "up";
-				}
-				
-				if(i > 25 && i <= 50) {
-					direction = "down";
-				}
-				
-				if(i > 50 && i <= 75) {
-					direction = "left";
-				}
-				
-				if(i > 75 && i <= 100) {
-					direction = "right";
-				}
-				actionCounter = 0; //reset the counter
-			}
-		}
-	
-	public void damageReaction() {
-		actionCounter = 0;
-		direction = gp.player.direction;
 	}
 }
