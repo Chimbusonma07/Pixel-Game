@@ -310,7 +310,7 @@ public class UserInterface {
 			//MENU
 			g2.setFont(g2.getFont().deriveFont(Font.BOLD, 25F));
 			
-			String menu0 = "Press Enter to Continue";
+			String menu0 = gp.touchMode ? "Tap A to select" : "Press Enter to Continue";
 			x = getXForCenteredText(menu0);
 			y += gp.tileSize * 4;
 			g2.drawString(menu0, x, y);
@@ -408,7 +408,25 @@ public class UserInterface {
 				loadingIndex ++;
 				loadingCounter = 0;
 			}
+
+			//SKIP HINT
+			g2.setFont(g2.getFont().deriveFont(Font.BOLD, 20F));
+			String skip = gp.touchMode ? "Tap A to skip" : "Press Enter to skip";
+			x = gp.maxScreenWidth - (int) g2.getFontMetrics().getStringBounds(skip, g2).getWidth() - gp.tileSize/2;
+			y = gp.maxScreenHeight - gp.tileSize/2;
+			g2.setColor(Color.black);
+			g2.drawString(skip, x + 2, y + 2);
+			g2.setColor(Color.yellow);
+			g2.drawString(skip, x, y);
+			g2.setColor(Color.white);
 		}
+	}
+
+	// Leave the instructions/loading screen early and start playing.
+	public void skipLoading() {
+		loadingIndex = 0;
+		loadingCounter = 0;
+		gp.gameState = gp.playState;
 	}
 		
 	public void pauseScreen() {

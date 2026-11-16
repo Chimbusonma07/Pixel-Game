@@ -6,6 +6,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -48,6 +50,7 @@ public class GamePanel extends JPanel implements Runnable{
     public UserInterface user = new UserInterface(this);
     public EventHandler eventH = new EventHandler(this);
     public PathFinder pathFinder = new PathFinder(this);
+    public boolean touchMode = false; // phone/tablet in the browser: hints say "Tap A" (the buttons live in web/index.html)
     
     //ENTITY AND OBJECT
     public Player player = new Player(this, key);
@@ -76,6 +79,11 @@ public class GamePanel extends JPanel implements Runnable{
         this.setDoubleBuffered(true); //Makes game rendering better
         this.addKeyListener(key);
         this.setFocusable(true);
+        this.addMouseListener(new java.awt.event.MouseAdapter() {
+        	public void mousePressed(java.awt.event.MouseEvent e) {
+        		requestFocusInWindow(); // clicking the game gives it the keyboard
+        	}
+        });
         }
     
     public void setupGame() {
@@ -195,6 +203,16 @@ public class GamePanel extends JPanel implements Runnable{
             if (timer >= 1000000000){
                 timer = 0;
             }
+
+            // Rest until the next frame is due instead of spinning. Without this the loop never lets
+            // go of the CPU: on desktop that's one core at 100%, and in the browser (where Java threads
+            // share the page's main thread) the page would freeze and never draw anything.
+            long sleepMs = (long) ((1 - delta) * drawInterval / 1000000);
+            try {
+                Thread.sleep(Math.max(1, sleepMs));
+            } catch (InterruptedException e) {
+                return;
+            }
         }
     }
 
@@ -242,9 +260,39 @@ public class GamePanel extends JPanel implements Runnable{
     	}
     }
 
+    //SCALING: the game is always drawn at 768 x 576 into `screen`, then scaled to fit the window
+    //(a phone, a browser tab or the desktop window) keeping its shape, with black bars if needed.
+    BufferedImage screen;
+    double viewScale = 1;
+    int offsetX = 0, offsetY = 0;
+    
     public void paintComponent(Graphics g){
-        super.paintComponent(g); // 'super' refers to the parent class which is JPanel
-        Graphics2D g2 = (Graphics2D)g;
+        super.paintComponent(g); // 'super' refers to the parent class which is JPanel (fills black)
+        if (screen == null) {
+        	screen = new BufferedImage(maxScreenWidth, maxScreenHeight, BufferedImage.TYPE_INT_RGB);
+        }
+        Graphics2D sg = screen.createGraphics();
+        sg.setColor(Color.black);
+        sg.fillRect(0, 0, maxScreenWidth, maxScreenHeight);
+        drawGame(sg);
+        sg.dispose();
+        
+        int w = getWidth() > 0 ? getWidth() : maxScreenWidth;
+        int h = getHeight() > 0 ? getHeight() : maxScreenHeight;
+        viewScale = Math.min(w / (double) maxScreenWidth, h / (double) maxScreenHeight);
+        int drawW = (int) Math.round(maxScreenWidth * viewScale);
+        int drawH = (int) Math.round(maxScreenHeight * viewScale);
+        offsetX = (w - drawW) / 2;
+        offsetY = (h - drawH) / 2;
+        
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, viewScale >= 1
+        		? RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR   // keep pixel art crisp when enlarging
+        		: RenderingHints.VALUE_INTERPOLATION_BILINEAR);         // smooth when shrinking for small screens
+        g2.drawImage(screen, offsetX, offsetY, drawW, drawH, null);
+    }
+    
+    private void drawGame(Graphics2D g2){
         //TITLE SCREEN
         if (gameState == titleState) {
         	user.draw(g2);
@@ -306,8 +354,6 @@ public class GamePanel extends JPanel implements Runnable{
             //UI
             user.draw(g2);
         }
-        
-        g2.dispose();
     }
     
   }

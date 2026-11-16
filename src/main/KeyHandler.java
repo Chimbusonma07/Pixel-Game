@@ -104,6 +104,10 @@ public class KeyHandler implements KeyListener{
                  }
              }
     	}
+    	// INSTRUCTIONS / LOADING SCREEN: Enter skips straight into the game
+    	else if (gp.user.subTitleState == 1 && code == KeyEvent.VK_ENTER) {
+    		gp.user.skipLoading();
+    	}
     }
     
     public void playState(int code) {

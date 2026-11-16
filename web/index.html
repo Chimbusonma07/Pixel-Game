@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>2D Adventure</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      /* stop the page scrolling/zooming while thumbs are on the buttons */
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ---------- on-screen controls (touch devices only) ---------- */
+    #controls { display: none; }
+    body.touch #controls { display: block; }
+    .btn {
+      position: fixed;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      color: rgba(255, 255, 255, .85);
+      background: rgba(60, 60, 60, .55);
+      border: 2px solid rgba(255, 255, 255, .6);
+      font: bold 4.5vmin/1 sans-serif;
+      touch-action: none;
+    }
+    .btn small { font: 2.6vmin/1.2 sans-serif; opacity: .85; }
+    .btn.held { background: rgba(255, 255, 255, .35); border-color: #fff; color: #fff; }
+    /* D-pad: bottom left */
+    .pad { width: 12vmin; height: 12vmin; border-radius: 2vmin; }
+    #up    { left: calc(env(safe-area-inset-left) + 15vmin); bottom: 27vmin; }
+    #down  { left: calc(env(safe-area-inset-left) + 15vmin); bottom: 3vmin; }
+    #left  { left: calc(env(safe-area-inset-left) + 3vmin);  bottom: 15vmin; }
+    #right { left: calc(env(safe-area-inset-left) + 27vmin); bottom: 15vmin; }
+    /* actions: bottom right */
+    #a { width: 18vmin; height: 18vmin; border-radius: 50%; right: calc(env(safe-area-inset-right) + 3vmin);  bottom: 17vmin; font-size: 7vmin; }
+    #b { width: 14vmin; height: 14vmin; border-radius: 50%; right: calc(env(safe-area-inset-right) + 21vmin); bottom: 3vmin;  font-size: 6vmin; }
+    /* menus: top right */
+    .menu { height: 8vmin; border-radius: 2vmin; top: 3vmin; font-size: 3.5vmin; }
+    #bag   { width: 13vmin; right: calc(env(safe-area-inset-right) + 14vmin); }
+    #pause { width: 9vmin;  right: calc(env(safe-area-inset-right) + 3vmin); }
+
+    /* ---------- phones held upright: ask to turn sideways ---------- */
+    #rotate {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      background: #000;
+      color: #fff;
+      font: 20px/1.4 sans-serif;
+      text-align: center;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    #rotate .icon { font-size: 56px; }
+    @media (orientation: portrait) { body.touch #rotate { display: flex; } }
+
+    /* ---------- desktop hint ---------- */
+    #hint {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 10px;
+      z-index: 5;
+      text-align: center;
+      color: #bbb;
+      font: 14px sans-serif;
+      pointer-events: none;
+      animation: fade 1s ease 20s forwards;
+    }
+    body.touch #hint { display: none; }
+    @keyframes fade { to { opacity: 0; } }
+  </style>
+  <script src="https://cjrtnc.leaningtech.com/5.0/loader.js"></script>
+</head>
+<body>
+  <div id="controls">
+    <div class="btn pad" id="up"    data-key="ArrowUp">&#9650;</div>
+    <div class="btn pad" id="down"  data-key="ArrowDown">&#9660;</div>
+    <div class="btn pad" id="left"  data-key="ArrowLeft">&#9664;</div>
+    <div class="btn pad" id="right" data-key="ArrowRight">&#9654;</div>
+    <div class="btn" id="a" data-key="Enter">A<small>Talk/Hit</small></div>
+    <div class="btn" id="b" data-key="s">B<small>Fire</small></div>
+    <div class="btn menu" id="bag"   data-key="Shift">BAG</div>
+    <div class="btn menu" id="pause" data-key=" ">II</div>
+  </div>
+  <div id="rotate">
+    <div class="icon">&#x1F4F1;&#x21BB;</div>
+    <p>Turn your device sideways to play</p>
+  </div>
+  <div id="hint">First load can take a little while. Click the game if the keys don't respond.</div>
+
+  <script type="module">
+    const touch = matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
+    if (touch) document.body.classList.add("touch");
+
+    // ---------- touch buttons -> keyboard keys ----------
+    // CheerpJ reads the keyboard through a hidden <textarea>; the buttons send their key presses there,
+    // so the game sees exactly what a keyboard would send. Each finger is tracked separately, so you
+    // can hold the D-pad and tap A at the same time, and slide a thumb across the D-pad.
+    const KEYS = {
+      ArrowUp: ["ArrowUp", 38], ArrowDown: ["ArrowDown", 40], ArrowLeft: ["ArrowLeft", 37], ArrowRight: ["ArrowRight", 39],
+      Enter: ["Enter", 13], s: ["KeyS", 83], Shift: ["ShiftLeft", 16], " ": ["Space", 32],
+    };
+    function sendKey(type, key) {
+      const [code, keyCode] = KEYS[key];
+      const target = document.querySelector("textarea") || document.activeElement || document.body;
+      target.dispatchEvent(new KeyboardEvent(type, { key, code, keyCode, which: keyCode, bubbles: true, cancelable: true }));
+    }
+    const fingers = new Map(); // touch id -> button element it is holding
+    function buttonAt(x, y) {
+      const el = document.elementFromPoint(x, y);
+      return el && el.closest ? el.closest(".btn") : null;
+    }
+    function hold(id, btn) {
+      const old = fingers.get(id);
+      if (old === btn) return;
+      if (old) { old.classList.remove("held"); sendKey("keyup", old.dataset.key); fingers.delete(id); }
+      if (btn) { btn.classList.add("held"); sendKey("keydown", btn.dataset.key); fingers.set(id, btn); }
+    }
+    const controls = document.getElementById("controls");
+    controls.addEventListener("touchstart", e => {
+      e.preventDefault(); e.stopPropagation();
+      for (const t of e.changedTouches) hold(t.identifier, buttonAt(t.clientX, t.clientY));
+    }, { passive: false });
+    controls.addEventListener("touchmove", e => {
+      e.preventDefault(); e.stopPropagation();
+      for (const t of e.changedTouches) {
+        const current = fingers.get(t.identifier);
+        const btn = buttonAt(t.clientX, t.clientY);
+        const isPad = el => el && el.classList.contains("pad");
+        if (isPad(current) && isPad(btn)) hold(t.identifier, btn);   // slide between D-pad arrows
+        else if (btn !== current) hold(t.identifier, null);           // slid off a button: let go
+      }
+    }, { passive: false });
+    const lift = e => { e.preventDefault(); e.stopPropagation(); for (const t of e.changedTouches) hold(t.identifier, null); };
+    controls.addEventListener("touchend", lift, { passive: false });
+    controls.addEventListener("touchcancel", lift, { passive: false });
+
+    // CheerpJ's hidden <textarea> must never pop up the phone's on-screen keyboard
+    new MutationObserver(() => {
+      for (const ta of document.querySelectorAll("textarea:not([inputmode])")) ta.setAttribute("inputmode", "none");
+    }).observe(document.body, { childList: true, subtree: true });
+
+    // ---------- start the game ----------
+    await cheerpjInit({ version: 8 });
+    cheerpjCreateDisplay(-1, -1, document.body); // fill the page and follow its size
+
+    // "/app/" is the web server root, so on GitHub Pages (https://<user>.github.io/Pixel-Game/)
+    // the jar is "/app/Pixel-Game/game.jar". Work it out from this page's own path.
+    const folder = location.pathname.replace(/[^/]*$/, "");
+    const args = touch ? ["web", "touch"] : ["web"];
+    await cheerpjRunJar("/app" + folder + "game.jar", ...args);
+  </script>
+</body>
+</html>
