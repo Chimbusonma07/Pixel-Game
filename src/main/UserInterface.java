@@ -79,19 +79,6 @@ public class UserInterface {
 		gp.gameState = gp.dialogueState;
 	}
 
-	// Pictures used by the menus, loaded from disk once and then reused every frame
-	// (re-reading them each frame made the title/pause/loading screens slow, especially in the browser).
-	java.util.Map<String, BufferedImage> imageCache = new java.util.HashMap<>();
-	
-	BufferedImage cachedImage(String path) {
-		BufferedImage img = imageCache.get(path);
-		if (img == null) {
-			img = gp.player.setup(path, gp.tileSize, gp.tileSize);
-			imageCache.put(path, img);
-		}
-		return img;
-	}
-	
 	public void addMessage(String text) {
 		message.add(text);
 		messageCounter.add(0);
@@ -130,7 +117,7 @@ public class UserInterface {
 			//TREASURE PICTURE
 			int size = gp.tileSize * 3;
 			y = gp.tileSize;
-			g2.drawImage(cachedImage("/objects/treasure chest"),
+			g2.drawImage(gp.player.setup("/objects/treasure chest", gp.tileSize, gp.tileSize),
 					gp.maxScreenWidth/2 - size/2, y, size, size, null);
 
 			//TITLE
@@ -156,15 +143,7 @@ public class UserInterface {
 			y += gp.tileSize;
 			g2.drawString(text, x, y);
 
-			//PLAY AGAIN (Enter / A starts a brand-new game; see KeyHandler.victoryState)
-			g2.setFont(g2.getFont().deriveFont(Font.BOLD, 26F));
-			text = gp.touchMode ? "Tap A to play again" : "Press Enter to play again";
-			x = getXForCenteredText(text);
-			y += gp.tileSize * 1.5;
-			g2.setColor(Color.black);
-			g2.drawString(text, x + 3, y + 3);
-			g2.setColor(Color.yellow);
-			g2.drawString(text, x, y);
+			gp.gameThread = null;
 		}
 		else {
 			this.g2 = g2;	
@@ -291,7 +270,6 @@ public class UserInterface {
 				if(messageCounter.get(i) > 180) {
 					message.remove(i);
 					messageCounter.remove(i);
-					i--; // the next message has moved into this slot; don't skip it
 				}
 			}
 		}
@@ -321,7 +299,7 @@ public class UserInterface {
 				imageChangeIndex = 0;
 			}
 				
-			g2.drawImage(cachedImage(images[imageChangeIndex]), x, y, gp.tileSize*2, gp.tileSize*2, null);
+			g2.drawImage(gp.player.setup(images[imageChangeIndex], gp.tileSize, gp.tileSize), x, y, gp.tileSize*2, gp.tileSize*2, null);
 			
 			imageChangeCounter ++;
 			if (imageChangeCounter == 80) {
@@ -423,7 +401,7 @@ public class UserInterface {
 				loadingIndex = 0;
 			}
 			
-			g2.drawImage(cachedImage(loading[loadingIndex]), x, y, gp.tileSize*10, gp.tileSize*6, null);
+			g2.drawImage(gp.player.setup(loading[loadingIndex], gp.tileSize, gp.tileSize), x, y, gp.tileSize*10, gp.tileSize*6, null);
 			
 			loadingCounter ++;
 			if (loadingCounter == LOADING_FRAMES_PER_STEP) {
@@ -454,7 +432,12 @@ public class UserInterface {
 	public void pauseScreen() {
 		int x = 30;
 		int y = 30;
-		g2.drawImage(cachedImage("/objects/pause symbol"), x, y, gp.tileSize * 3, gp.tileSize * 3, null);
+		try {
+			image = ImageIO.read(getClass().getResourceAsStream("/objects/pause symbol.png"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		g2.drawImage(image, x, y, gp.tileSize * 3, gp.tileSize * 3, null);
 	}
 	
 	public void dialogueScreen() {

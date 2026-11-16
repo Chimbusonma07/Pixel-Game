@@ -370,7 +370,7 @@ public class Player extends Entity{
     				text = "You must be Level 6 to open it (you are Level " + level + ")";
     			}
     			else {
-    				gp.victory();
+    				gp.user.gameEnd = true;
     				return;
     			}
     			if (!gp.user.message.contains(text)) { // don't stack the same message every frame
@@ -379,7 +379,7 @@ public class Player extends Entity{
     			return;
     		}
 
-    	    if ("Treasure".equals(gp.obj[i].name)) {
+    	    if (gp.obj[i].name == "Treasure") {
     	    	if(haveKey == true && level >= 3) { // >= so a higher level can never lock the player out
     	    		// the key is used up on the first chest
     	    		inventory.removeIf(item -> item != null && "Key".equals(item.name));
@@ -387,17 +387,9 @@ public class Player extends Entity{
         			haveKey = false;
         			gp.obj[i] = null;
         			gp.changeMap(1);
-        			return;
     	    	}
-    	    	// tell the player why it won't open (shown once while they push on it, not every frame)
-    	    	text = haveKey ? "You must be Level 3 to open this chest (you are Level " + level + ")"
-    	    			: "It's locked... find the key!";
-    	    	if (!gp.user.message.contains(text)) {
-    	    		gp.user.addMessage(text);
-    	    	}
-    	    	return;
     		}
-    		else if (inventory.size() != maxInventorySize) {
+    		else if (inventory.size() != maxInventorySize && gp.obj[i].name != "Treasure") {
     			inventory.add(gp.obj[i]);
     			text = gp.obj[i].name + " obtained!!";
     			haveKey = true;
@@ -406,9 +398,7 @@ public class Player extends Entity{
     		else {
     			text = "Your inventory is full";
     		}
-    		if (!text.isEmpty() && !gp.user.message.contains(text)) {
-    			gp.user.addMessage(text);
-    		}
+    	    gp.user.addMessage(text);
     	}  
     }
     
@@ -508,26 +498,16 @@ public class Player extends Entity{
     	}
     }
 
-    // Level up as many times as the XP covers (a big XP gain can give several levels at once).
-    // On the island the Level 3 cap still applies.
     public void levelUp() {
-    	int startLevel = level;
-    	while (exp >= nextLevelExp) {
-    		if (gp.currentMap == 0 && level >= WORLDVER2_MAX_LEVEL) {
-    			capWorldVer2Exp();
-    			break;
-    		}
+    	if(exp >= nextLevelExp) {
     		level ++;
     		strength ++;
-    		nextLevelExp *= 2;
-    	}
-    	if (level > startLevel) {
     		attack = getAttack();
     		life = maxLife;
+    		nextLevelExp *= 2;
+    		
     		gp.gameState = gp.dialogueState;
-    		gp.user.currentDialogue = (level - startLevel > 1)
-    				? "You jumped " + (level - startLevel) + " levels! You are now Level " + level
-    				: "You are now Level " + level;
+    		gp.user.currentDialogue = "You are now Level " + level;
     	}
     }
 

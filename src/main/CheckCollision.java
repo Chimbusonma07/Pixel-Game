@@ -139,8 +139,7 @@ public class CheckCollision {
 				}
 				
 				if (entity.solidArea.intersects(target[i].solidArea)) {
-					// a monster that is dying (flashing out) is like a ghost: no collision, so you walk straight through
-					if(target[i] != entity && target[i] != ignore && target[i].dying == false) {
+					if(target[i] != entity && target[i] != ignore) {
 						entity.collisionOn = true;						
 						index = i;
 					}
