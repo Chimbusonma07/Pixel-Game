@@ -17,6 +17,19 @@ public class FireBall extends Entity{
 	}
 	
 	public boolean fromPlayer = true; // false for monster projectiles (they hurt the player instead)
+	public Entity shooter;            // the monster that fired it (its own shots never hit it)
+
+	// A stray monster shot: the hit monster glitches (flashes, health bar shows) and loses life.
+	// It's not the player's doing, so no XP, no messages, and it doesn't make the monster
+	// retreat or notice the player. It weakens the monster but never kills it (stays at 1+ life).
+	void hitMonsterByMistake(Entity target) {
+		if (target.noDamage) {
+			return; // still flashing from the last hit
+		}
+		int damage = Math.max(attack - target.defense, 1);
+		target.life = Math.max(target.life - damage, 1);
+		target.noDamage = true; // the existing hit effect: flicker + health bar
+	}
 
 	public void update() {
 		if (fromPlayer) {
@@ -36,6 +49,15 @@ public class FireBall extends Entity{
 			}
 			alive = false;
 			return;
+		}
+		else {
+			// FRIENDLY FIRE: a monster's shot that misses the player can hit another monster instead
+			int monsterIndex = gp.checker.checkEntity(this, gp.monsters, shooter);
+			if (monsterIndex != 999 && gp.monsters[monsterIndex].dying == false) {
+				hitMonsterByMistake(gp.monsters[monsterIndex]);
+				alive = false;
+				return;
+			}
 		}
 
 		// stop at walls (brick, trees, water) instead of passing through them

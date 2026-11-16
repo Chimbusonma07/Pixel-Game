@@ -398,6 +398,10 @@ public class Player extends Entity{
     	if (!OBJHealthCoin.NAME.equals(item.name) || healthCoins <= 0) {
     		return;
     	}
+    	if (gp.currentMap != 1) {
+    		gp.user.showInventoryNotice("Health Coins only work in the maze!");
+    		return;
+    	}
     	if (life >= maxLife) {
     		gp.user.showInventoryNotice("Your life is already full!");
     		return;

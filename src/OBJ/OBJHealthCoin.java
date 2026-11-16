@@ -14,7 +14,7 @@ import main.GamePanel;
 public class OBJHealthCoin extends Entity {
 
 	public static final String NAME = "Health Coin";
-	public static final int HEAL_AMOUNT = 2; // one full heart
+	public static final int HEAL_AMOUNT = 1; // half a heart
 
 	public OBJHealthCoin(GamePanel gp) {
 		super(gp);
@@ -22,7 +22,7 @@ public class OBJHealthCoin extends Entity {
 		down1 = coinImage(gp.tileSize);
 		down2 = down1; // Entity.draw shows down2 for objects
 		collision = false; // walk over it to collect it
-		description = "[" + name + "]\nRestores 1 heart.\nPress Enter to use.";
+		description = "[" + name + "]\nRestores half a heart.\nMaze only: Enter to use.";
 	}
 
 	// There's no coin sprite, so draw a gold coin with a red cross.

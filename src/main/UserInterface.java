@@ -607,7 +607,7 @@ public class UserInterface {
 			String description = item.description;
 			if (OBJHealthCoin.NAME.equals(item.name)) {
 				description = "[" + item.name + "] x" + gp.player.healthCoins
-						+ "\nRestores 1 heart.\nPress Enter to use one.";
+						+ "\nRestores half a heart.\nMaze only: Enter to use.";
 			}
 			for(String line: description.split("\n")) {
 				g2.drawString(line, textX, textY);

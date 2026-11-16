@@ -2,6 +2,7 @@ package main;
 
 import Monsters.Beetle;
 import Monsters.Blue;
+import Monsters.Monster;
 import Monsters.Ogre;
 import OBJ.OBJChest;
 import OBJ.OBJDoor;
@@ -24,13 +25,7 @@ public class AssetSetter {
 		gp.obj[1].worldY = gp.tileSize * 10;
 
 		setChest();
-
-		placeCoins(0, new int[][] {
-			{35, 11},   // teleport island, next to the hidden key
-			{20, 38},   // beside the ogre pair guarding the south
-			{13, 30},   // deep in the winding south-west road
-			{26, 17},   // tucked-away clearing off the central road
-		});
+		// (no health coins here: they only exist in the maze)
 	}
 
 	// ---------------- HEALTH COINS ----------------
@@ -91,38 +86,58 @@ public class AssetSetter {
 		gp.obj[1].worldX = gp.tileSize * 38;
 		gp.obj[1].worldY = gp.tileSize * 38;
 
-		// rewards for exploring dead ends, plus top-ups on the long routes to the door and the chest
-		placeCoins(1, new int[][] {
-			{8, 8},     // far north-west dead end
-			{10, 12},   // dead end on the long way to the door
-			{18, 20},   // mid-maze dead end
-			{28, 26},   // east dead end
-			{10, 28},   // west dead end
-			{14, 34},   // south-west dead end
-			{30, 40},   // dead end on the way to the Grand Treasure
-		});
+		// Health coins: each hidden at the end of a blind corridor (3+ tiles, no side branches),
+		// with a guard posted 2 tiles back in that corridor (see setMazeMonsters).
+		placeCoins(1, MAZE_COINS);
 	}
+
+	// {col, row} of each coin, and {kind, col, row} of the monster guarding it (same order).
+	static final int[][] MAZE_COINS = {
+		{8, 8},     // far north-west corner
+		{12, 16},   // west, off the long route to the door
+		{18, 20},   // middle-west
+		{14, 34},   // south-west
+		{34, 28},   // east
+		{30, 10},   // north-east
+	};
+	static final int[][] COIN_GUARDS = {
+		{2, 10, 8},   // Ogre
+		{1, 12, 18},  // Blue - spits straight down the corridor at you
+		{2, 16, 20},  // Ogre
+		{0, 14, 36},  // Beetle
+		{1, 36, 28},  // Blue
+		{0, 30, 12},  // Beetle
+	};
 
 	public void setMazeMonsters() {
 		// {kind, col, row}  kind: 0 = Beetle, 1 = Blue, 2 = Ogre
 		int[][] spawns = {
 			{2, 16, 8}, {2, 14, 10},          // ogres guarding the way to the door
 			{2, 39, 40}, {2, 40, 36},         // ogres guarding the Grand Treasure
-			{1, 8, 40}, {0, 38, 12}, {1, 8, 22}, {0, 16, 32},
-			{1, 25, 38}, {0, 36, 26}, {1, 31, 18}, {0, 24, 12},
-			{1, 18, 18}, {0, 30, 31}, {1, 40, 20}, {0, 32, 8},
+			{1, 8, 40}, {0, 38, 12}, {1, 25, 38}, {0, 24, 12}, {1, 31, 18}, {0, 40, 20}, // wanderers
 		};
-		for (int i = 0; i < spawns.length; i++) {
-			Entity m;
-			switch (spawns[i][0]) {
-			case 0:  m = new Beetle(gp); toughen(m, 6, 2, 3); break;
-			case 1:  m = new Blue(gp);   toughen(m, 8, 2, 4); break;
-			default: m = new Ogre(gp);   toughen(m, 12, 3, 6); break;
-			}
-			m.worldX = gp.tileSize * spawns[i][1];
-			m.worldY = gp.tileSize * spawns[i][2];
-			gp.monsters[i] = m;
+		int i = 0;
+		for (int[] s : spawns) {
+			gp.monsters[i++] = makeMonster(s);
 		}
+		// coin guards stay at their post (walk back if lured away), like the ogres
+		for (int[] s : COIN_GUARDS) {
+			Monster guard = makeMonster(s);
+			guard.guardPost();
+			gp.monsters[i++] = guard;
+		}
+	}
+
+	private Monster makeMonster(int[] s) {
+		Monster m;
+		switch (s[0]) {
+		case 0:  m = new Beetle(gp); toughen(m, 6, 2, 3); break;
+		case 1:  m = new Blue(gp);   toughen(m, 8, 2, 4); break;
+		default: m = new Ogre(gp);   toughen(m, 12, 3, 6); break;
+		}
+		m.worldX = gp.tileSize * s[1];
+		m.worldY = gp.tileSize * s[2];
+		return m;
 	}
 
 	// Maze monsters are stronger than WorldVer2's and give more XP so Level 6 is reachable.
@@ -148,9 +163,6 @@ public class AssetSetter {
 		wizard.worldY = gp.tileSize * 21;
 		gp.npc[0] = wizard;
 
-		placeCoins(2, new int[][] {
-			{20, 25},   // a gift on the reading-corner rug
-		});
 	}
 
 	// ---------------- WORLDVER2 ----------------

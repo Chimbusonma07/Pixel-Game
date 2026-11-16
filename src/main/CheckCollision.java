@@ -106,6 +106,11 @@ public class CheckCollision {
 	
 	//NPC collision
 	public int checkEntity(Entity entity, Entity[] target) {
+		return checkEntity(entity, target, null);
+	}
+	
+	// Same, but never reports `ignore` (e.g. a monster's own projectile shouldn't hit the monster that fired it).
+	public int checkEntity(Entity entity, Entity[] target, Entity ignore) {
 		int index = 999;//Any random number, as long as it's not within the array
 		for (int i = 0; i < target.length; i++) {
 			if (target[i] != null) {
@@ -134,7 +139,7 @@ public class CheckCollision {
 				}
 				
 				if (entity.solidArea.intersects(target[i].solidArea)) {
-					if(target[i] != entity) {
+					if(target[i] != entity && target[i] != ignore) {
 						entity.collisionOn = true;						
 						index = i;
 					}

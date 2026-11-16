@@ -29,6 +29,7 @@ public class Monster extends Entity {
 	protected boolean guardsHome = false;
 	protected int leashRange = 7;     // guards: furthest they follow you from home (tiles of path)
 	protected int returnSpeed = 2;
+	protected int patrolRadius = 3;  // guards: how far (tiles of path) they wander from their post
 	protected FireBall missile;       // ranged monsters only
 	protected int retreatTime = 180;  // frames spent backing off after being hit (3 seconds)
 
@@ -151,6 +152,7 @@ public class Monster extends Entity {
 			faceTowardPlayer(col, row);
 			speed = 0;
 			if (shotCooldown == 0 && missile != null && missile.alive == false) {
+				missile.shooter = this;
 				missile.set(worldX, worldY, direction, true);
 				gp.projectileList.add(missile);
 				shotCooldown = 120;
@@ -173,7 +175,7 @@ public class Monster extends Entity {
 		java.util.List<String> options = new java.util.ArrayList<>();
 		for (String d : new String[] {"up", "down", "left", "right"}) {
 			int[] n = neighbour(col, row, d);
-			boolean nearHome = !guardsHome || homeDist == null || (homeDist[n[0]][n[1]] >= 0 && homeDist[n[0]][n[1]] <= 3);
+			boolean nearHome = !guardsHome || homeDist == null || (homeDist[n[0]][n[1]] >= 0 && homeDist[n[0]][n[1]] <= patrolRadius);
 			if (pf.walkable(n[0], n[1]) && nearHome && !d.equals(opposite(direction))) {
 				options.add(d);
 			}
@@ -271,6 +273,14 @@ public class Monster extends Entity {
 		else {
 			stuckFrames = 0;
 		}
+	}
+
+	// Make any monster a guard: it stays within a few tiles of where it spawned (e.g. next to a
+	// health coin), chases intruders, and walks back to its post if lured more than 5 tiles away.
+	public void guardPost() {
+		guardsHome = true;
+		leashRange = 5;
+		patrolRadius = 2; // stays right by the coin
 	}
 
 	// Getting hit makes a monster back off for a few seconds, then come back for you
