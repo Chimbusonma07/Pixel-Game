@@ -448,7 +448,8 @@ public class Player extends Entity{
     
     public void contactMonster(int i) {
     	if(i != 999) {
-    		if(noDamage == false && gp.monsters[i].dying == false) {
+    		// no damage from a monster that is dying or blinking after being hit
+    		if(noDamage == false && gp.monsters[i].dying == false && gp.monsters[i].noDamage == false) {
     			int damage = gp.monsters[i].attack - defense;
     			if(damage < 0) {
     				damage = 0;

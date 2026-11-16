@@ -104,7 +104,7 @@ public class GamePanel extends JPanel implements Runnable{
     // RETRY: carry on from where you died. Same map and spot, same level/XP/items/keys/coins, and the
     // world stays as it was (killed monsters stay dead, collected things stay collected, so nothing can
     // be farmed). Full life, plus a few seconds of invincibility to get away from whatever killed you.
-    public void retry() {
+    public synchronized void retry() {
     	player.setLife();
     	player.respawnShield = Player.RESPAWN_SHIELD_FRAMES;
     	player.stopAttacking();
@@ -116,7 +116,7 @@ public class GamePanel extends JPanel implements Runnable{
     // RESTART: a brand-new game, exactly as when the game is first launched. Rebuilding the player,
     // interface, events and world from scratch guarantees nothing carries over (stats, items, keys,
     // coins, flags, menu cursors, messages...).
-    public void restart() {
+    public synchronized void restart() {
     	key.releaseAll();
     	player = new Player(this, key);
     	user = new UserInterface(this);
@@ -129,7 +129,7 @@ public class GamePanel extends JPanel implements Runnable{
     	setupGame(); // objects, NPCs, monsters, and back to the title screen
     }
     
-    public void changeMap(int map) {
+    public synchronized void changeMap(int map) {
     	currentMap = map;
     	if (map == 1) {
     		// pulled in by the first chest: land in the centre of the maze
@@ -151,7 +151,7 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     // Leave the house through the entrance and come back out next to the maze door.
-    public void exitHouse() {
+    public synchronized void exitHouse() {
     	loadMaze();
     	player.worldX = tileSize * AssetSetter.MAZE_DOOR_EXIT_COL;
     	player.worldY = tileSize * AssetSetter.MAZE_DOOR_EXIT_ROW;
@@ -159,7 +159,7 @@ public class GamePanel extends JPanel implements Runnable{
     	eventH.doorHintShown = true; // they already know where the door is
     }
 
-    public void respawnInMaze() {
+    public synchronized void respawnInMaze() {
     	loadMaze();
     	player.worldX = tileSize * 24; // centre of the maze
     	player.worldY = tileSize * 24;
@@ -225,7 +225,7 @@ public class GamePanel extends JPanel implements Runnable{
         }
     }
 
-    public void update(){
+    public synchronized void update(){
     	if (gameState == playState) {
     		
     		//PLAYER
@@ -283,7 +283,12 @@ public class GamePanel extends JPanel implements Runnable{
         Graphics2D sg = screen.createGraphics();
         sg.setColor(Color.black);
         sg.fillRect(0, 0, maxScreenWidth, maxScreenHeight);
-        drawGame(sg);
+        // Draw while holding the game lock: a frame can never be painted half-way through an update
+        // (e.g. a map change, where the new map is loaded but the player hasn't been moved yet, which
+        // used to flash the player in the maze's upper-left before landing in the centre).
+        synchronized (this) {
+        	drawGame(sg);
+        }
         sg.dispose();
         
         int w = getWidth() > 0 ? getWidth() : maxScreenWidth;

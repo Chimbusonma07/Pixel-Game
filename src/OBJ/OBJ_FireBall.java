@@ -17,7 +17,7 @@ public class OBJ_FireBall extends FireBall{
 
 		// small hitbox in the middle of the sprite so it fits down 1-tile corridors
 		solidArea.x = 12;
-		solidArea.y = 12;
+		solidArea.y = 16; // same top as the player's hitbox, so the fireball fits wherever the player fits
 		solidArea.width = 24;
 		solidArea.height = 24;
 		solidAreaDefaultX = solidArea.x;

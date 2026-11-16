@@ -130,7 +130,8 @@ public class Entity {
 		gp.checker.checkObject(this, false);
 		boolean contactPlayer = gp.checker.checkPlayer(this);
 		
-		if(this.type == 2 && contactPlayer == true) {
+		// a monster blinking after being hit can't hurt the player (just like it can't be hurt itself)
+		if(this.type == 2 && contactPlayer == true && noDamage == false) {
 			if(gp.player.noDamage == false) {
 				int damage = attack - gp.player.defense;
     			if(damage < 0) {

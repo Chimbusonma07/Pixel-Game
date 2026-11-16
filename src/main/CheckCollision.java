@@ -139,7 +139,10 @@ public class CheckCollision {
 				}
 				
 				if (entity.solidArea.intersects(target[i].solidArea)) {
-					if(target[i] != entity && target[i] != ignore) {
+					// "Ghost" monsters don't block anything: one that is dying (flashing out) or blinking
+					// after being hit can be walked through, and it can't hurt you or be hurt meanwhile.
+					boolean ghost = target[i].dying || (target[i].type == 2 && target[i].noDamage);
+					if(target[i] != entity && target[i] != ignore && !ghost) {
 						entity.collisionOn = true;						
 						index = i;
 					}
